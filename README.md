@@ -12,7 +12,7 @@ async with Gofile() as g:
 # About API
 > Gofile is in BETA version and this API will evolve over time. Check regularly if changes have been made.
 >
-Current version is compatible with `2025-05-16`
+Current version is compatible with the API reference captured on `2026-11-24`.
 
 
 > [!NOTE]
@@ -85,6 +85,10 @@ async with Gofile(token="your_token") as g:
     # Create folder
     await g.create_folder(parentFolderId="your_root_folder_id", folderName="Folder Name")
 
+    # Create a guest account or a standard account
+    await g.create_account()
+    await g.create_account(email="you@example.com")
+
     # Update content attributes (rename, set description, tags, etc.)
     await g.update_content(contentId="id_of_content", attribute="name", attributeValue="new_name.txt")
 
@@ -109,7 +113,7 @@ async with Gofile(token="your_token") as g:
     # Create a direct link
     await g.create_direct_link(contentId="content_id", expireTime=1735689600)
 
-    # Update a direct link
+    # Update a direct link (PATCH semantics; pass [] to clear a restriction)
     await g.update_direct_link(contentId="content_id", directLinkId="link_id", expireTime=1735689600)
 
     # Delete a direct link
@@ -170,9 +174,11 @@ By default, uploads go through `upload.gofile.io` which automatically selects th
 |--------|----------|
 | `upload-eu-par` | Paris |
 | `upload-na-phx` | Phoenix |
+| `upload-na-nyc` | New York City |
 | `upload-ap-sgp` | Singapore |
 | `upload-ap-hkg` | Hong Kong |
 | `upload-ap-tyo` | Tokyo |
+| `upload-ap-syd` | Sydney |
 | `upload-sa-sao` | São Paulo |
 
 ```python
@@ -237,11 +243,12 @@ with Sync_Gofile() as g:
     - `public: Optional[bool]` - Whether folder is publicly accessible
     - `token: Optional[str]` - Per-request token (overrides instance token)
 
-- `update_content(contentId: str, attribute: str, attributeValue: Any, token: Optional[str] = None) -> Dict[str, Any]`
+- `update_content(contentId: str, attribute: str, attributeValue: Any, token: Optional[str] = None, deleteAfterExpiry: Optional[bool] = None) -> Dict[str, Any]`
     - Update an attribute of a file or folder
     - `contentId: str` - Content ID
-    - `attribute: str` - Attribute to update (`name`, `description`, `tags`, `public`, `expiry`, `password`)
+    - `attribute: str` - Attribute to update (`name`, `description`, `tags`, `public`, `expiry`, `password`, `modTime`)
     - `attributeValue: Any` - New value for the attribute
+    - `deleteAfterExpiry: Optional[bool]` - Expiry deletion consent for Premium content
     - `token: Optional[str]` - Per-request token (overrides instance token)
 
 - `delete_content(contentId: str, token: Optional[str] = None) -> Dict[str, Any]`
@@ -249,16 +256,21 @@ with Sync_Gofile() as g:
     - `contentId: str` - Comma-separated list of content IDs to delete
     - `token: Optional[str]` - Per-request token (overrides instance token)
 
-- `get_content(contentId: str, password: Optional[str] = None, token: Optional[str] = None) -> Dict[str, Any]`
+- `get_content(contentId: str, password: Optional[str] = None, token: Optional[str] = None, page: Optional[int] = None, pageSize: Optional[int] = None, sortField: Optional[str] = None, sortDirection: Optional[int] = None, contentFilter: Optional[str] = None, maxdepth: Optional[int] = None) -> Dict[str, Any]`
     - Get information about a folder and its contents
     - `contentId: str` - Content ID (must be a folder ID)
     - `password: Optional[str]` - SHA-256 hash of the password for password-protected content
+    - `page`, `pageSize`, `sortField`, `sortDirection`, `contentFilter`, `maxdepth` - Optional listing and pagination controls
     - `token: Optional[str]` - Per-request token (overrides instance token)
 
-- `search_content(contentId: str, searchedString: str, token: Optional[str] = None) -> Dict[str, Any]`
+- `search_content(contentId: str, searchedString: str, token: Optional[str] = None, password: Optional[str] = None, createTimeFrom: Optional[int] = None, createTimeTo: Optional[int] = None) -> Dict[str, Any]`
     - Search for files and folders within a specific parent folder
     - `contentId: str` - Folder ID to search within
     - `searchedString: str` - Search string to match against content names or tags
+    - `password`, `createTimeFrom`, `createTimeTo` - Optional password and creation-time filters
+
+- `create_account(email: Optional[str] = None, token: Optional[str] = None) -> Dict[str, Any]`
+    - Create a guest account or a standard account associated with an email address
     - `token: Optional[str]` - Per-request token (overrides instance token)
 
 - `copy_content(contentsId: str, folderId: str, password: Optional[str] = None, token: Optional[str] = None) -> Dict[str, Any]`

@@ -34,9 +34,11 @@ class Gofile:
         "upload",
         "upload-eu-par",
         "upload-na-phx",
+        "upload-na-nyc",
         "upload-ap-sgp",
         "upload-ap-hkg",
         "upload-ap-tyo",
+        "upload-ap-syd",
         "upload-sa-sao",
     }
 
@@ -229,6 +231,7 @@ class Gofile:
         attribute: str,
         attributeValue: Any,
         token: Optional[str] = None,
+        deleteAfterExpiry: Optional[bool] = None,
     ) -> Dict[str, Any]:
         """
         Update an attribute of a file or folder.
@@ -236,7 +239,9 @@ class Gofile:
         Args:
             contentId: The content ID.
             attribute: Attribute to update. One of: 'name', 'description',
-                       'tags', 'public', 'expiry', 'password'.
+                       'tags', 'public', 'expiry', 'password', 'modTime'.
+            deleteAfterExpiry: Whether Premium expiry should permanently delete
+                               the content and descendants.
             attributeValue: New value for the attribute.
             token: Optional per-request token. Overrides the instance token.
 
@@ -250,6 +255,7 @@ class Gofile:
             "public",
             "expiry",
             "password",
+            "modTime",
         }
         if attribute not in valid_attributes:
             raise InvalidOption(attribute)
@@ -259,6 +265,10 @@ class Gofile:
             "attribute": attribute,
             "attributeValue": attributeValue,
         }
+        if deleteAfterExpiry is not None:
+            if attribute != "expiry":
+                raise InvalidOption("deleteAfterExpiry")
+            payload["deleteAfterExpiry"] = deleteAfterExpiry
         return await self._api_request("PUT", url, json=payload, token=token)
 
     async def delete_content(self, contentId: str, token: Optional[str] = None) -> Dict[str, Any]:
@@ -281,6 +291,12 @@ class Gofile:
         contentId: str,
         password: Optional[str] = None,
         token: Optional[str] = None,
+        page: Optional[int] = None,
+        pageSize: Optional[int] = None,
+        sortField: Optional[str] = None,
+        sortDirection: Optional[int] = None,
+        contentFilter: Optional[str] = None,
+        maxdepth: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
         Get information about a folder and its contents.
@@ -294,9 +310,18 @@ class Gofile:
             Content information including metadata and file listings.
         """
         url = f"{self.api_url}/contents/{contentId}"
-        params: Optional[Dict[str, str]] = None
-        if password is not None:
-            params = {"password": password}
+        params: Dict[str, Any] = {}
+        for name, value in (
+            ("password", password),
+            ("page", page),
+            ("pageSize", pageSize),
+            ("sortField", sortField),
+            ("sortDirection", sortDirection),
+            ("contentFilter", contentFilter),
+            ("maxdepth", maxdepth),
+        ):
+            if value is not None:
+                params[name] = value
         return await self._api_request("GET", url, params=params, token=token)
 
     async def search_content(
@@ -304,6 +329,9 @@ class Gofile:
         contentId: str,
         searchedString: str,
         token: Optional[str] = None,
+        password: Optional[str] = None,
+        createTimeFrom: Optional[int] = None,
+        createTimeTo: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
         Search for files and folders within a specific parent folder.
@@ -317,7 +345,17 @@ class Gofile:
             Search results.
         """
         url = f"{self.api_url}/contents/search"
-        params = {"contentId": contentId, "searchedString": searchedString}
+        params: Dict[str, Any] = {
+            "contentId": contentId,
+            "searchedString": searchedString,
+        }
+        for name, value in (
+            ("password", password),
+            ("createTimeFrom", createTimeFrom),
+            ("createTimeTo", createTimeTo),
+        ):
+            if value is not None:
+                params[name] = value
         return await self._api_request("GET", url, params=params, token=token)
 
     async def copy_content(
@@ -474,7 +512,7 @@ class Gofile:
         payload = self._build_direct_link_payload(
             expireTime, sourceIpsAllowed, domainsAllowed, domainsBlocked, auth
         )
-        return await self._api_request("PUT", url, json=payload, token=token)
+        return await self._api_request("PATCH", url, json=payload, token=token)
 
     async def delete_direct_link(
         self,
@@ -497,6 +535,18 @@ class Gofile:
         return await self._api_request("DELETE", url, token=token)
 
     # --- Account ---
+
+    async def create_account(
+        self,
+        email: Optional[str] = None,
+        token: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Create a guest account or a standard account with an email address."""
+        url = f"{self.api_url}/accounts"
+        payload: Optional[Dict[str, str]] = {"email": email} if email is not None else None
+        return await self._api_request(
+            "POST", url, json=payload, need_token=False, token=token
+        )
 
     async def get_account_id(self, token: Optional[str] = None) -> Dict[str, Any]:
         """

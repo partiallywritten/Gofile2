@@ -120,6 +120,7 @@ class Sync_Gofile:
         attribute: str,
         attributeValue: Any,
         token: Optional[str] = None,
+        deleteAfterExpiry: Optional[bool] = None,
     ) -> Dict[str, Any]:
         """
         Update an attribute of a file or folder.
@@ -135,7 +136,8 @@ class Sync_Gofile:
         """
         return self._run(
             self._async_client.update_content(
-                contentId, attribute, attributeValue, token=token
+                contentId, attribute, attributeValue, token=token,
+                deleteAfterExpiry=deleteAfterExpiry
             )
         )
 
@@ -157,6 +159,12 @@ class Sync_Gofile:
         contentId: str,
         password: Optional[str] = None,
         token: Optional[str] = None,
+        page: Optional[int] = None,
+        pageSize: Optional[int] = None,
+        sortField: Optional[str] = None,
+        sortDirection: Optional[int] = None,
+        contentFilter: Optional[str] = None,
+        maxdepth: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
         Get information about a folder and its contents.
@@ -169,13 +177,22 @@ class Sync_Gofile:
         Returns:
             Content information.
         """
-        return self._run(self._async_client.get_content(contentId, password, token=token))
+        return self._run(
+            self._async_client.get_content(
+                contentId, password, token=token, page=page, pageSize=pageSize,
+                sortField=sortField, sortDirection=sortDirection,
+                contentFilter=contentFilter, maxdepth=maxdepth
+            )
+        )
 
     def search_content(
         self,
         contentId: str,
         searchedString: str,
         token: Optional[str] = None,
+        password: Optional[str] = None,
+        createTimeFrom: Optional[int] = None,
+        createTimeTo: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
         Search for files and folders within a specific parent folder.
@@ -189,7 +206,10 @@ class Sync_Gofile:
             Search results.
         """
         return self._run(
-            self._async_client.search_content(contentId, searchedString, token=token)
+            self._async_client.search_content(
+                contentId, searchedString, token=token, password=password,
+                createTimeFrom=createTimeFrom, createTimeTo=createTimeTo
+            )
         )
 
     def copy_content(
@@ -340,6 +360,16 @@ class Sync_Gofile:
         """
         return self._run(
             self._async_client.delete_direct_link(contentId, directLinkId, token=token)
+        )
+
+    def create_account(
+        self,
+        email: Optional[str] = None,
+        token: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Create a guest account or a standard account with an email address."""
+        return self._run(
+            self._async_client.create_account(email=email, token=token)
         )
 
     def get_account_id(self, token: Optional[str] = None) -> Dict[str, Any]:
