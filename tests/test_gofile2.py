@@ -418,7 +418,7 @@ class TestGofileDirectLinks:
 
     @pytest.mark.asyncio
     async def test_update_direct_link_success(self, mock_aio):
-        mock_aio.put(
+        mock_aio.patch(
             "https://api.gofile.io/contents/content123/directlinks/link1",
             payload={"status": "ok", "data": {}},
         )
@@ -432,7 +432,7 @@ class TestGofileDirectLinks:
 
     @pytest.mark.asyncio
     async def test_update_direct_link_with_domains_blocked(self, mock_aio):
-        mock_aio.put(
+        mock_aio.patch(
             "https://api.gofile.io/contents/content123/directlinks/link1",
             payload={"status": "ok", "data": {}},
         )
@@ -669,7 +669,7 @@ class TestGofilePerMethodToken:
 
     @pytest.mark.asyncio
     async def test_update_direct_link_with_per_method_token(self, mock_aio):
-        mock_aio.put(
+        mock_aio.patch(
             "https://api.gofile.io/contents/c1/directlinks/link1",
             payload={"status": "ok", "data": {}},
         )
